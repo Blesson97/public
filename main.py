@@ -3,7 +3,6 @@
 import os
 import tempfile
 from dotenv import load_dotenv
-
 from langchain.llms import OpenAI
 from langchain.llm_chain import LLMChain
 from langchain.prompt_template import PromptTemplate
@@ -12,7 +11,6 @@ from config import WHITE, GREEN, RESET_COLOR, model_name
 from utils import format_user_question
 from file_processing import clone_github_repo, load_and_index_files
 from questions import ask_question, QuestionContext
-
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -24,16 +22,14 @@ def generate_prompt_template(repo_name, github_url, conversation_history, questi
     """
     template = """
     Repo: {repo_name} ({github_url}) | Conv: {conversation_history} | Docs: {numbered_documents} | Q: {question} | FileCount: {file_type_counts} | FileNames: {filenames}
-
     Instr:
     1. Answer based on context/docs.
     2. Focus on repo/code.
     3. Consider:
-        a. Purpose/features - describe.
-        b. Functions/code - provide details/samples.
-        c. Setup/usage - give instructions.
+      a. Purpose/features - describe.
+      b. Functions/code - provide details/samples.
+      c. Setup/usage - give instructions.
     4. Unsure? Say "I am not sure".
-
     Answer:
     """
 
