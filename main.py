@@ -1,8 +1,7 @@
-#main.py
+# main.py
 import os
 import tempfile
 from dotenv import load_dotenv
-from langchain import PromptTemplate, LLMChain
 from langchain.llms import OpenAI
 from config import WHITE, GREEN, RESET_COLOR, model_name
 from utils import format_user_question
@@ -11,6 +10,29 @@ from questions import ask_question, QuestionContext
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
+def prompt_template(repo_name, github_url, conversation_history, question, numbered_documents, file_type_counts, filenames):
+    template = """
+    Repo: {repo_name} ({github_url}) | Conv: {conversation_history} | Docs: {numbered_documents} | Q: {question} | FileCount: {file_type_counts} | FileNames: {filenames}
+
+    Instr:
+    1. Answer based on context/docs.
+    2. Focus on repo/code.
+    3. Consider:
+        a. Purpose/features - describe.
+        b. Functions/code - provide details/samples.
+        c. Setup/usage - give instructions.
+    4. Unsure? Say "I am not sure".
+
+    Answer:
+    """
+
+    prompt = PromptTemplate(
+        template=template,
+        input_variables=["repo_name", "github_url", "conversation_history", "question", "numbered_documents", "file_type_counts", "filenames"]
+    )
+
+    return prompt
 
 def main():
     github_url = input("Enter the GitHub URL of the repository: ")
@@ -26,30 +48,12 @@ def main():
             print("Repository cloned. Indexing files...")
             llm = OpenAI(api_key=OPENAI_API_KEY, temperature=0.2)
 
-            template = """
-            Repo: {repo_name} ({github_url}) | Conv: {conversation_history} | Docs: {numbered_documents} | Q: {question} | FileCount: {file_type_counts} | FileNames: {filenames}
-
-            Instr:
-            1. Answer based on context/docs.
-            2. Focus on repo/code.
-            3. Consider:
-                a. Purpose/features - describe.
-                b. Functions/code - provide details/samples.
-                c. Setup/usage - give instructions.
-            4. Unsure? Say "I am not sure".
-
-            Answer:
-            """
-
-            prompt = PromptTemplate(
-                template=template,
-                input_variables=["repo_name", "github_url", "conversation_history", "question", "numbered_documents", "file_type_counts", "filenames"]
-            )
-
+            prompt = prompt_template(repo_name, github_url, "", "", len(documents), file_type_counts, filenames)
             llm_chain = LLMChain(prompt=prompt, llm=llm)
 
             conversation_history = ""
             question_context = QuestionContext(index, documents, llm_chain, model_name, repo_name, github_url, conversation_history, file_type_counts, filenames)
+            
             while True:
                 try:
                     user_question = input("\n" + WHITE + "Ask a question about the repository (type 'exit()' to quit): " + RESET_COLOR)
