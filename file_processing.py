@@ -1,4 +1,5 @@
 # file_processing.py
+
 import os
 import uuid
 import subprocess
@@ -9,7 +10,17 @@ from langchain.document_loaders import DirectoryLoader, NotebookLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from utils import clean_and_tokenize
 
-def clone_github_repo(github_url, local_path):
+def clone_repository(github_url, local_path):
+    """
+    Clones a GitHub repository to the specified local path.
+    
+    Args:
+        github_url (str): The URL of the GitHub repository.
+        local_path (str): The local path to clone the repository.
+
+    Returns:
+        bool: True if cloning is successful, False otherwise.
+    """
     try:
         subprocess.run(['git', 'clone', github_url, local_path], check=True)
         return True
@@ -17,7 +28,16 @@ def clone_github_repo(github_url, local_path):
         print(f"Failed to clone repository: {e}")
         return False
 
-def load_and_index_files(repo_path):
+def load_files(repo_path):
+    """
+    Loads and indexes files from a repository.
+
+    Args:
+        repo_path (str): The path to the repository.
+
+    Returns:
+        tuple: A tuple containing the index, split documents, file type counts, and sources of the split documents.
+    """
     extensions = ['txt', 'md', 'markdown', 'rst', 'py', 'js', 'java', 'c', 'cpp', 'cs', 'go', 'rb', 'php', 'scala', 'html', 'htm', 'xml', 'json', 'yaml', 'yml', 'ini', 'toml', 'cfg', 'conf', 'sh', 'bash', 'css', 'scss', 'sql', 'gitignore', 'dockerignore', 'editorconfig', 'ipynb']
 
     file_type_counts = {}
@@ -62,9 +82,23 @@ def load_and_index_files(repo_path):
     if split_documents:
         tokenized_documents = [clean_and_tokenize(doc.page_content) for doc in split_documents]
         index = BM25Okapi(tokenized_documents)
-    return index, split_documents, file_type_counts, [doc.metadata['source'] for doc in split_documents]
+    
+    sources = [doc.metadata['source'] for doc in split_documents]
+    return index, split_documents, file_type_counts, sources
 
 def search_documents(query, index, documents, n_results=5):
+    """
+    Searches for documents based on a query and returns the top results.
+
+    Args:
+        query (str): The query string.
+        index: The index used for searching.
+        documents: The list of documents.
+        n_results (int): The number of top results to return.
+
+    Returns:
+        list: The top search results.
+    """
     query_tokens = clean_and_tokenize(query)
     bm25_scores = index.get_scores(query_tokens)
 
