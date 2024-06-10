@@ -3,6 +3,7 @@
 import os
 import tempfile
 from dotenv import load_dotenv
+
 from langchain.llms import OpenAI
 from langchain.llm_chain import LLMChain
 from langchain.prompt_template import PromptTemplate
@@ -12,13 +13,22 @@ from utils import format_user_question
 from file_processing import clone_github_repo, load_and_index_files
 from questions import ask_question, QuestionContext
 
-load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
 
 def generate_prompt_template(repo_name, github_url, conversation_history, question, numbered_documents, file_type_counts, filenames):
     """
     Generates the prompt template for asking a question.
+
+    Args:
+    - repo_name (str): The name of the repository.
+    - github_url (str): The URL of the GitHub repository.
+    - conversation_history (str): The conversation history.
+    - question (str): The question.
+    - numbered_documents (int): The number of numbered documents.
+    - file_type_counts (dict): The counts of each file type.
+    - filenames (list[str]): The list of filenames.
+
+    Returns:
+    - prompt (PromptTemplate): The prompt template object.
     """
     template = """
     Repo: {repo_name} ({github_url}) | Conv: {conversation_history} | Docs: {numbered_documents} | Q: {question} | FileCount: {file_type_counts} | FileNames: {filenames}
@@ -44,6 +54,15 @@ def generate_prompt_template(repo_name, github_url, conversation_history, questi
 def clone_and_index_repository(github_url):
     """
     Clone and index the repository.
+
+    Args:
+    - github_url (str): The URL of the GitHub repository.
+
+    Returns:
+    - index (Index): The index object.
+    - documents (list[Document]): The list of documents.
+    - file_type_counts (dict): The counts of each file type.
+    - filenames (list[str]): The list of filenames.
     """
     with tempfile.TemporaryDirectory() as local_path:
         if clone_github_repo(github_url, local_path):
@@ -53,26 +72,63 @@ def clone_and_index_repository(github_url):
             return None, None, None, None
 
 
-def ask_question_about_repository(user_question, question_context):
+def ask_question_and_get_answer(prompt, question_context):
     """
-    Ask a question about the repository and display the answer.
+    Ask a question and get the answer.
+
+    Args:
+    - prompt (PromptTemplate): The prompt object.
+    - question_context (QuestionContext): The question context object.
+
+    Returns:
+    - answer (str): The answer to the question.
     """
-    user_question = format_user_question(user_question)
-    answer = ask_question(user_question, question_context)
-    return answer
+    user_question = input("\n" + WHITE + "Ask a question about the repository (type 'exit()' to quit): " + RESET_COLOR)
+    if user_question.lower() == "exit()":
+        return None
+    else:
+        user_question = format_user_question(user_question)
+        answer = ask_question(user_question, question_context)
+        return answer
 
 
-def display_answer(answer):
+def ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history):
     """
-    Display the answer to the user.
+    Ask questions about the repository and display the answers.
+
+    Args:
+    - repo_name (str): The name of the repository.
+    - github_url (str): The URL of the GitHub repository.
+    - index (Index): The index object.
+    - documents (list[Document]): The list of documents.
+    - file_type_counts (dict): The counts of each file type.
+    - filenames (list[str]): The list of filenames.
+    - llm_chain (LLMChain): The LLM chain object.
+    - conversation_history (str): The conversation history.
     """
-    print(GREEN + '\nANSWER\n' + answer + RESET_COLOR + '\n')
+    question_context = QuestionContext(index, documents, llm_chain, model_name, repo_name, github_url, conversation_history, file_type_counts, filenames)
+
+    while True:
+        try:
+            answer = ask_question_and_get_answer(user_question, question_context)
+            if answer is None:
+                break
+
+            print(GREEN + '\nANSWER\n' + answer + RESET_COLOR + '\n')
+            conversation_history += f"Question: {user_question}\nAnswer: {answer}\n"
+        
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            break
 
 
 def main():
     """
     The main entry point of the program.
     """
+    load_dotenv()
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    
     github_url = input("Enter the GitHub URL of the repository: ")
     repo_name = os.path.basename(github_url)
 
@@ -90,21 +146,7 @@ def main():
     llm_chain = LLMChain(prompt=prompt, llm=llm)
 
     conversation_history = ""
-    while True:
-        try:
-            user_question = input("\n" + WHITE + "Ask a question about the repository (type 'exit()' to quit): " + RESET_COLOR)
-            if user_question.lower() == "exit()":
-                break
-            else:
-                print('Thinking...')
-                question_context = QuestionContext(index, documents, llm_chain, model_name, repo_name, github_url, conversation_history, file_type_counts, filenames)
-                answer = ask_question_about_repository(user_question, question_context)
-                display_answer(answer)
-                conversation_history += f"Question: {user_question}\nAnswer: {answer}\n"
-        
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            break
+    ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history)
 
 
 if __name__ == "__main__":
