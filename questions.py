@@ -1,25 +1,41 @@
 # questions.py
 
+from typing import List
+
 from file_processing import search_documents
+from llm_chain import LLMChain
+from model import Model
 
 
 class QuestionContext:
-    def __init__(self, index, documents, llm_chain, model_name, repo_name, github_url):
-        """
-        A class representing the context of a question.
+    """
+    A class representing the context of a question.
+    """
 
-        Attributes:
-        - index: The index of the context.
-        - documents: The list of documents in the context.
-        - llm_chain: The LLM chain used for generating answers.
-        - model_name: The name of the model used for generating answers.
-        - repo_name: The name of the GitHub repository.
-        - github_url: The URL of the GitHub repository.
+    def __init__(
+        self,
+        index: int,
+        documents: List[str],
+        llm_chain: LLMChain,
+        model: Model,
+        repo_name: str,
+        github_url: str,
+    ):
+        """
+        Initialize the QuestionContext object.
+
+        Parameters:
+            index (int): The index of the context.
+            documents (List[str]): The list of documents in the context.
+            llm_chain (LLMChain): The LLM chain used for generating answers.
+            model (Model): The model used for generating answers.
+            repo_name (str): The name of the GitHub repository.
+            github_url (str): The URL of the GitHub repository.
         """
         self.index = index
         self.documents = documents
         self.llm_chain = llm_chain
-        self.model_name = model_name
+        self.model = model
         self.repo_name = repo_name
         self.github_url = github_url
 
@@ -28,76 +44,45 @@ def ask_question(question: str, context: QuestionContext) -> str:
     """
     Process the given question and return the generated answer.
 
-    Args:
-        question: The question being asked.
-        context: The context containing relevant information.
+    Parameters:
+        question (str): The question being asked.
+        context (QuestionContext): The context containing relevant information.
 
     Returns:
         str: The generated answer.
     """
-    relevant_docs = get_relevant_documents(question, context)
-    question_context = generate_question_context(context)
-    answer = generate_answer(question, question_context, context)
+    relevant_docs = search_documents(question, context.index, context.documents, n_results=5)
+    question_context = generate_question_context(context.repo_name, context.github_url, relevant_docs)
+    answer = generate_answer(context.llm_chain, context.model, question, question_context)
     return answer
 
 
-def get_relevant_documents(question: str, context: QuestionContext) -> list:
+def generate_question_context(repo_name: str, github_url: str, relevant_docs: List[str]) -> str:
     """
-    Retrieve relevant documents based on the given question and context.
+    Generate the question context string.
 
-    Args:
-        question: The question being asked.
-        context: The context containing relevant information.
+    Parameters:
+        repo_name (str): The name of the GitHub repository.
+        github_url (str): The URL of the GitHub repository.
+        relevant_docs (List[str]): The list of relevant documents.
 
     Returns:
-        list: List of relevant documents.
+        str: The question context string.
     """
-    return search_documents(question, context.index, context.documents, n_results=5)
+    return f"This question is about the GitHub repository '{repo_name}' available at {github_url}. The most relevant documents are:\n\n{'\n'.join(relevant_docs)}"
 
 
-def generate_answer(question: str, question_context: str, context: QuestionContext) -> str:
+def generate_answer(llm_chain: LLMChain, model: Model, question: str, question_context: str) -> str:
     """
-    Generate an answer to the given question based on the question context.
+    Generate the answer using the LLM chain and model.
 
-    Args:
-        question: The question being asked.
-        question_context: The context of the question.
-        context: The context containing relevant information.
+    Parameters:
+        llm_chain (LLMChain): The LLM chain.
+        model (Model): The model.
+        question (str): The question.
+        question_context (str): The question context.
 
     Returns:
         str: The generated answer.
     """
-    return context.llm_chain.run(
-        model=context.model_name,
-        question=question,
-        context=question_context
-    )
-
-
-def generate_question_context(context: QuestionContext) -> str:
-    """
-    Generate the question context based on the given context.
-
-    Args:
-        context: The context containing relevant information.
-
-    Returns:
-        str: The generated question context.
-    """
-    formatted_docs = format_documents(context.documents)
-    question_context = f"This question is about the GitHub repository '{context.repo_name}' available at {context.github_url}. The most relevant documents are:\n\n{formatted_docs}"
-    return question_context
-
-
-def format_documents(documents: list) -> str:
-    """
-    Format the documents into a readable string.
-
-    Args:
-        documents: The list of documents.
-
-    Returns:
-        str: The formatted documents.
-    """
-    formatted_docs = '\n'.join(documents)
-    return formatted_docs
+    return llm_chain.run(model=model, question=question, context=question_context)
