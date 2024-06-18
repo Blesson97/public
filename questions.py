@@ -20,7 +20,7 @@ class QuestionContext:
 
 def ask_question(question, context: QuestionContext):
     relevant_docs = get_relevant_documents(question, context)
-    question_context = get_question_context(context)
+    question_context = generate_question_context(context)
     answer = generate_answer(question, question_context, context)
     return answer
 
@@ -58,7 +58,7 @@ def generate_answer(question, question_context, context):
     )
 
 
-def get_question_context(context):
+def generate_question_context(context):
     """
     Generate the question context based on the given context.
 
