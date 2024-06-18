@@ -19,23 +19,55 @@ class QuestionContext:
 
 
 def ask_question(question, context: QuestionContext):
-    relevant_docs = search_documents(question, context.index, context.documents, n_results=5)
+    relevant_docs = get_relevant_documents(question, context)
+    question_context = get_question_context(context)
+    answer = generate_answer(question, question_context, context)
+    return answer
 
-    numbered_documents = format_documents(relevant_docs)
-    question_context = generate_question_context(context)
 
-    answer_with_sources = context.llm_chain.run(
+def get_relevant_documents(question, context):
+    """
+    Retrieve relevant documents based on the given question and context.
+
+    Args:
+        question (str): The question being asked.
+        context (QuestionContext): The context containing relevant information.
+
+    Returns:
+        list: List of relevant documents.
+    """
+    return search_documents(question, context.index, context.documents, n_results=5)
+
+
+def generate_answer(question, question_context, context):
+    """
+    Generate an answer to the given question based on the question context.
+
+    Args:
+        question (str): The question being asked.
+        question_context (str): The context of the question.
+        context (QuestionContext): The context containing relevant information.
+
+    Returns:
+        str: The generated answer.
+    """
+    return context.llm_chain.run(
         model=context.model_name,
         question=question,
         context=question_context
     )
-    return answer_with_sources
 
 
-def generate_question_context(context: QuestionContext):
-    numbered_documents = format_documents(context.documents)
-    question_context = f"This question is about the GitHub repository '{context.repo_name}' available at {context.github_url}. The most relevant documents are:\n\n{numbered_documents}"
+def get_question_context(context):
+    """
+    Generate the question context based on the given context.
+
+    Args: 
+        context (QuestionContext): The context containing relevant information.
+
+    Returns:
+        str: The generated question context.
+    """
+    number_docs = format_documents(context.documents)
+    question_context = f"This question is about the GitHub repository '{context.repo_name}' available at {context.github_url}. The most relevant documents are:\n\n{number_docs}"
     return question_context
-
-
-# End of code
