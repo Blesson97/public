@@ -87,3 +87,16 @@ def generate_question_context(context: QuestionContext) -> str:
     formatted_docs = format_documents(context.documents)
     question_context = f"This question is about the GitHub repository '{context.repo_name}' available at {context.github_url}. The most relevant documents are:\n\n{formatted_docs}"
     return question_context
+
+def format_documents(documents: list) -> str:
+    """
+    Format the documents into a readable string.
+
+    Args:
+    - documents: The list of documents.
+
+    Returns:
+     str: The formatted documents.
+    """
+    formatted_docs = '\n'.join(documents)
+    return formatted_docs
