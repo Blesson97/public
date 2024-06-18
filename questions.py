@@ -19,8 +19,18 @@ class QuestionContext:
 
 
 def ask_question(question, context: QuestionContext):
+    """
+    Process the given question and return the generated answer.
+
+    Args:
+        question (str): The question being asked.
+        context (QuestionContext): The context containing relevant information.
+
+    Returns:
+        str: The generated answer.
+    """
     relevant_docs = get_relevant_documents(question, context)
-    question_context = get_question_context(context)
+    question_context = generate_question_context(context)
     answer = generate_answer(question, question_context, context)
     return answer
 
@@ -58,16 +68,16 @@ def generate_answer(question, question_context, context):
     )
 
 
-def get_question_context(context):
+def generate_question_context(context):
     """
     Generate the question context based on the given context.
 
-    Args: 
+    Args:
         context (QuestionContext): The context containing relevant information.
 
     Returns:
         str: The generated question context.
     """
-    number_docs = format_documents(context.documents)
-    question_context = f"This question is about the GitHub repository '{context.repo_name}' available at {context.github_url}. The most relevant documents are:\n\n{number_docs}"
+    formatted_docs = format_documents(context.documents)
+    question_context = f"This question is about the GitHub repository '{context.repo_name}' available at {context.github_url}. The most relevant documents are:\n\n{formatted_docs}"
     return question_context
