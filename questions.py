@@ -35,13 +35,13 @@ def ask_question(question: str, context: QuestionContext) -> str:
     Returns:
         str: The generated answer.
     """
-    relevant_docs = _get_relevant_documents(question, context)
-    question_context = _generate_question_context(context)
-    answer = _generate_answer(question, question_context, context)
+    relevant_docs = get_relevant_documents(question, context)
+    question_context = generate_question_context(context)
+    answer = generate_answer(question, question_context, context)
     return answer
 
 
-def _get_relevant_documents(question: str, context: QuestionContext) -> list:
+def get_relevant_documents(question: str, context: QuestionContext) -> list:
     """
     Retrieve relevant documents based on the given question and context.
 
@@ -55,7 +55,7 @@ def _get_relevant_documents(question: str, context: QuestionContext) -> list:
     return search_documents(question, context.index, context.documents, n_results=5)
 
 
-def _generate_answer(question: str, question_context: str, context: QuestionContext) -> str:
+def generate_answer(question: str, question_context: str, context: QuestionContext) -> str:
     """
     Generate an answer to the given question based on the question context.
 
@@ -74,7 +74,7 @@ def _generate_answer(question: str, question_context: str, context: QuestionCont
     )
 
 
-def _generate_question_context(context: QuestionContext) -> str:
+def generate_question_context(context: QuestionContext) -> str:
     """
     Generate the question context based on the given context.
 
@@ -84,11 +84,12 @@ def _generate_question_context(context: QuestionContext) -> str:
     Returns:
         str: The generated question context.
     """
-    formatted_docs = _format_documents(context.documents)
+    formatted_docs = format_documents(context.documents)
     question_context = f"This question is about the GitHub repository '{context.repo_name}' available at {context.github_url}. The most relevant documents are:\n\n{formatted_docs}"
     return question_context
 
-def _format_documents(documents: list) -> str:
+
+def format_documents(documents: list) -> str:
     """
     Format the documents into a readable string.
 
