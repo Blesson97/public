@@ -1,33 +1,39 @@
 # questions.py
 
-from utils import format_documents
 from file_processing import search_documents
 
 
 class QuestionContext:
-    def __init__(self, index, documents, llm_chain, model_name, repo_name, github_url, conversation_history,
-                 file_type_counts, filenames):
+    def __init__(self, index, documents, llm_chain, model_name, repo_name, github_url):
+        """
+        A class representing the context of a question.
+
+        Attributes:
+        - index: The index of the context.
+        - documents: The list of documents in the context.
+        - llm_chain: The LLM chain used for generating answers.
+        - model_name: The name of the model used for generating answers.
+        - repo_name: The name of the GitHub repository.
+        - github_url: The URL of the GitHub repository.
+        """
         self.index = index
         self.documents = documents
         self.llm_chain = llm_chain
         self.model_name = model_name
         self.repo_name = repo_name
         self.github_url = github_url
-        self.conversation_history = conversation_history
-        self.file_type_counts = file_type_counts
-        self.filenames = filenames
 
 
-def ask_question(question, context: QuestionContext):
+def ask_question(question: str, context: QuestionContext) -> str:
     """
     Process the given question and return the generated answer.
 
     Args:
-        question (str): The question being asked.
-        context (QuestionContext): The context containing relevant information.
+    - question: The question being asked.
+    - context: The context containing relevant information.
 
     Returns:
-        str: The generated answer.
+     str: The generated answer.
     """
     relevant_docs = get_relevant_documents(question, context)
     question_context = generate_question_context(context)
@@ -35,31 +41,31 @@ def ask_question(question, context: QuestionContext):
     return answer
 
 
-def get_relevant_documents(question, context):
+def get_relevant_documents(question: str, context: QuestionContext) -> list:
     """
     Retrieve relevant documents based on the given question and context.
 
     Args:
-        question (str): The question being asked.
-        context (QuestionContext): The context containing relevant information.
+    - question: The question being asked.
+    - context: The context containing relevant information.
 
     Returns:
-        list: List of relevant documents.
+     list: List of relevant documents.
     """
     return search_documents(question, context.index, context.documents, n_results=5)
 
 
-def generate_answer(question, question_context, context):
+def generate_answer(question: str, question_context: str, context: QuestionContext) -> str:
     """
     Generate an answer to the given question based on the question context.
 
     Args:
-        question (str): The question being asked.
-        question_context (str): The context of the question.
-        context (QuestionContext): The context containing relevant information.
+    - question: The question being asked.
+    - question_context: The context of the question.
+    - context: The context containing relevant information.
 
     Returns:
-        str: The generated answer.
+     str: The generated answer.
     """
     return context.llm_chain.run(
         model=context.model_name,
@@ -68,15 +74,15 @@ def generate_answer(question, question_context, context):
     )
 
 
-def generate_question_context(context):
+def generate_question_context(context: QuestionContext) -> str:
     """
     Generate the question context based on the given context.
 
     Args:
-        context (QuestionContext): The context containing relevant information.
+    - context: The context containing relevant information.
 
     Returns:
-        str: The generated question context.
+     str: The generated question context.
     """
     formatted_docs = format_documents(context.documents)
     question_context = f"This question is about the GitHub repository '{context.repo_name}' available at {context.github_url}. The most relevant documents are:\n\n{formatted_docs}"
