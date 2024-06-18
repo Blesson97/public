@@ -11,7 +11,7 @@ from utils import clean_and_tokenize
 def clone_repository(github_url, local_path):
     """
     Clones a GitHub repository to the specified local path.
-    
+
     Args:
         github_url (str): The URL of the GitHub repository.
         local_path (str): The local path to clone the repository.
@@ -36,14 +36,13 @@ def load_files(repo_path):
     Returns:
         tuple: A tuple containing the index, split documents, file type counts, and sources of the split documents.
     """
-    extensions = ['txt', 'md', 'markdown', 'rst', 'py', 'js', 'java', 'c', 'cpp', 'cs', 'go', 'rb', 'php', 'scala', 'html', 'htm', 'xml', 'json', 'yaml', 'yml', 'ini', 'toml', 'cfg', 'conf', 'sh', 'bash', 'css', 'scss', 'sql', 'gitignore', 'dockerignore', 'editorconfig', 'ipynb']
+    extensions = get_file_extensions()
     file_type_counts = {}
     documents_dict = {}
 
     for ext in extensions:
         glob_pattern = f'**/*.{ext}'
         try:
-            loader = None
             if ext == 'ipynb':
                 loader = NotebookLoader(str(repo_path), include_outputs=True, max_output_length=20, remove_newline=True)
             else:
@@ -57,10 +56,23 @@ def load_files(repo_path):
             continue
 
     split_documents = get_split_documents(documents_dict)
-    index = get_index(split_documents)
+    index = create_index(split_documents)
 
     sources = get_document_sources(split_documents)
     return index, split_documents, file_type_counts, sources
+
+def get_file_extensions():
+    """
+    Returns a list of file extensions to consider for loading and indexing.
+
+    Returns:
+        list: List of file extensions.
+    """
+    return [
+        'txt', 'md', 'markdown', 'rst', 'py', 'js', 'java', 'c', 'cpp', 'cs', 'go', 'rb', 'php', 'scala', 'html',
+        'htm', 'xml', 'json', 'yaml', 'yml', 'ini', 'toml', 'cfg', 'conf', 'sh', 'bash', 'css', 'scss', 'sql',
+        'gitignore', 'dockerignore', 'editorconfig', 'ipynb'
+    ]
 
 def get_loaded_documents(loader):
     """
@@ -130,7 +142,7 @@ def get_split_documents(documents_dict):
 
     return split_documents
 
-def get_index(split_documents):
+def create_index(split_documents):
     """
     Creates an index from split documents.
 
@@ -176,7 +188,10 @@ def search_documents(query, index, documents, n_results=5):
     query_tokens = clean_and_tokenize(query)
     bm25_scores = index.get_scores(query_tokens)
 
-    tfidf_vectorizer = TfidfVectorizer(tokenizer=clean_and_tokenize, lowercase=True, stop_words='english', use_idf=True, smooth_idf=True, sublinear_tf=True)
+    tfidf_vectorizer = TfidfVectorizer(
+        tokenizer=clean_and_tokenize, lowercase=True, stop_words='english',
+        use_idf=True, smooth_idf=True, sublinear_tf=True
+    )
     tfidf_matrix = tfidf_vectorizer.fit_transform([doc.page_content for doc in documents])
     query_tfidf = tfidf_vectorizer.transform([query])
 
@@ -186,7 +201,7 @@ def search_documents(query, index, documents, n_results=5):
 
     unique_top_document_indices = get_unique_top_document_indices(combined_scores, n_results)
 
-    return get_top_documents(documents, unique_top_document_indices)
+    return [documents[i] for i in unique_top_document_indices]
 
 def get_unique_top_document_indices(combined_scores, n_results):
     """
@@ -201,16 +216,3 @@ def get_unique_top_document_indices(combined_scores, n_results):
     """
     unique_top_document_indices = list(set(combined_scores.argsort()[::-1]))[:n_results]
     return unique_top_document_indices
-
-def get_top_documents(documents, unique_top_document_indices):
-    """
-    Gets the top documents based on the unique top document indices.
-
-    Args:
-        documents (list): List of documents.
-        unique_top_document_indices (list): List of unique top document indices.
-
-    Returns:
-        list: List of top documents.
-    """
-    return [documents[i] for i in unique_top_document_indices]
