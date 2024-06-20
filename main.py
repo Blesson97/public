@@ -1,4 +1,3 @@
-```python
 import os
 import tempfile
 from dotenv import load_dotenv
@@ -139,7 +138,7 @@ def main():
 
     if not index or not documents:
         print("No documents were found to index. Exiting.")
-        exit()
+        return
 
     print("Repository cloned. Indexing files...")
 
@@ -154,4 +153,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```
