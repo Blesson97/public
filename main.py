@@ -6,14 +6,13 @@ from langchain.llms import OpenAI
 from langchain.llm_chain import LLMChain
 from langchain.prompt_template import PromptTemplate
 
-from config import WHITE, GREEN, RESET_COLOR, model_name
+from config import model_name
 from utils import format_user_question
 from file_processing import clone_github_repo, load_and_index_files
 from questions import ask_question, QuestionContext
 
 
 load_dotenv()
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 def generate_prompt_template(repo_name, github_url, conversation_history, question, numbered_documents, file_type_counts, filenames):
@@ -68,7 +67,7 @@ def clone_and_index_repository(github_url):
             return None, None, None, None
 
 
-def ask_question_prompt(user_input, question_context, conversation_history):
+def prompt_for_question(user_input, question_context, conversation_history):
     """
     Prompt for a question, generate an answer, and update conversation_history.
 
@@ -114,13 +113,13 @@ def ask_questions(repo_name, github_url, index, documents, file_type_counts, fil
 
     while True:
         try:
-            user_input = input(f"\n{WHITE}Ask a question about the repository (type 'exit()' to quit): {RESET_COLOR}")
+            user_input = input(f"\nAsk a question about the repository (type 'exit()' to quit): ")
             if user_input.lower() == "exit()":
                 break
             else:
                 print('Thinking...')
-                answer = ask_question_prompt(user_input, question_context, conversation_history)
-                print(f"{GREEN}\nANSWER\n{answer}{RESET_COLOR}\n")
+                answer = prompt_for_question(user_input, question_context, conversation_history)
+                print(f"\nANSWER\n{answer}\n")
         except Exception as e:
             print(f"An error occurred: {e}")
             break
@@ -142,10 +141,8 @@ def main():
 
     print("Repository cloned. Indexing files...")
 
-    openai_instance = OpenAI(api_key=OPENAI_API_KEY, temperature=0.2)
-
     prompt = generate_prompt_template(repo_name, github_url, "", "", len(documents), file_type_counts, filenames)
-    llm_chain = LLMChain(prompt=prompt, llm=openai_instance)
+    llm_chain = LLMChain(prompt=prompt, llm=OpenAI(api_key=load_dotenv("OPENAI_API_KEY"), temperature=0.2))
 
     conversation_history = ""
     ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history)
