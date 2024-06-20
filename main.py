@@ -14,7 +14,6 @@ from questions import ask_question, QuestionContext
 
 load_dotenv()
 
-
 def generate_prompt_template(repo_name, github_url, conversation_history, question, numbered_documents, file_type_counts, filenames):
     """
     Generates the prompt template for asking a question.
@@ -48,7 +47,6 @@ def generate_prompt_template(repo_name, github_url, conversation_history, questi
     prompt = PromptTemplate(template=template, input_variables=input_variables)
     return prompt
 
-
 def clone_and_index_repository(github_url):
     """
     Clone and index the repository.
@@ -66,7 +64,6 @@ def clone_and_index_repository(github_url):
         else:
             return None, None, None, None
 
-
 def prompt_for_question(user_input, question_context, conversation_history):
     """
     Prompt for a question, generate an answer, and update conversation_history.
@@ -83,7 +80,6 @@ def prompt_for_question(user_input, question_context, conversation_history):
     answer = ask_question(user_question, question_context)
     conversation_history += f"Question: {user_question}\nAnswer: {answer}\n"
     return answer
-
 
 def ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history):
     """
@@ -124,7 +120,6 @@ def ask_questions(repo_name, github_url, index, documents, file_type_counts, fil
             print(f"An error occurred: {e}")
             break
 
-
 def main():
     """
     The main entry point of the program.
@@ -146,7 +141,6 @@ def main():
 
     conversation_history = ""
     ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history)
-
 
 if __name__ == "__main__":
     main()
