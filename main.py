@@ -11,12 +11,9 @@ from utils import format_user_question
 from file_processing import clone_github_repo, load_and_index_files
 from questions import ask_question, QuestionContext
 
-
 load_dotenv()
 
-
-def generate_prompt_template(repo_name, github_url, conversation_history, question, numbered_documents, file_type_counts,
-                             filenames):
+def generate_prompt_template(repo_name, github_url, conversation_history, question, numbered_documents, file_type_counts, filenames):
     """
     Generates the prompt template for asking a question.
 
@@ -50,7 +47,6 @@ def generate_prompt_template(repo_name, github_url, conversation_history, questi
     prompt = PromptTemplate(template=template, input_variables=input_variables)
     return prompt
 
-
 def clone_and_index_repository(github_url):
     """
     Clone and index the repository.
@@ -67,7 +63,6 @@ def clone_and_index_repository(github_url):
             return index, documents, file_type_counts, filenames
         else:
             return None, None, None, None
-
 
 def prompt_for_question(user_input, question_context, conversation_history):
     """
@@ -86,9 +81,7 @@ def prompt_for_question(user_input, question_context, conversation_history):
     conversation_history += f"Question: {user_question}\nAnswer: {answer}\n"
     return answer
 
-
-def ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain,
-                   conversation_history):
+def ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history):
     """
     Ask questions about the repository and display the answers.
 
@@ -102,17 +95,8 @@ def ask_questions(repo_name, github_url, index, documents, file_type_counts, fil
         llm_chain (LLMChain): The LLMChain object.
         conversation_history (str): The conversation history.
     """
-    question_context = QuestionContext(
-        index,
-        documents,
-        llm_chain,
-        model_name,
-        repo_name,
-        github_url,
-        conversation_history,
-        file_type_counts,
-        filenames
-    )
+    question_context = QuestionContext(index, documents, llm_chain, model_name, repo_name, github_url,
+                                       conversation_history, file_type_counts, filenames)
 
     while True:
         try:
@@ -127,29 +111,33 @@ def ask_questions(repo_name, github_url, index, documents, file_type_counts, fil
             print(f"An error occurred: {e}")
             break
 
-
 def main():
     """
     The main entry point of the program.
     """
-    github_url = input("Enter the GitHub URL of the repository: ")
-    repo_name = os.path.basename(github_url)
+    try:
+        github_url = input("Enter the GitHub URL of the repository: ")
+        repo_name = os.path.basename(github_url)
 
-    print("Cloning the repository...")
-    index, documents, file_type_counts, filenames = clone_and_index_repository(github_url)
+        print("Cloning the repository...")
+        index, documents, file_type_counts, filenames = clone_and_index_repository(github_url)
 
-    if not index or not documents:
-        print("No documents were found to index. Exiting.")
-        return
+        if not index or not documents:
+            print("No documents were found to index. Exiting.")
+            return
 
-    print("Repository cloned. Indexing files...")
+        print("Repository cloned. Indexing files...")
 
-    prompt = generate_prompt_template(repo_name, github_url, "", "", len(documents), file_type_counts, filenames)
-    llm_chain = LLMChain(prompt=prompt, llm=OpenAI(api_key=load_dotenv("OPENAI_API_KEY"), temperature=0.2))
-
-    conversation_history = ""
-    ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history)
-
+        prompt = generate_prompt_template(repo_name, github_url, "", "", len(documents), file_type_counts, filenames)
+        llm_chain = LLMChain(prompt=prompt, llm=OpenAI(api_key=load_dotenv("OPENAI_API_KEY"), temperature=0.2))
+        
+        conversation_history = ""
+        ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history)
+    
+    except KeyboardInterrupt:
+        print("Program terminated by user.")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
