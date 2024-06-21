@@ -1,3 +1,5 @@
+Updated Code:
+
 import os
 import tempfile
 from dotenv import load_dotenv
@@ -13,7 +15,9 @@ from questions import ask_question, QuestionContext
 
 load_dotenv()
 
-def generate_prompt_template(repo_name, github_url, conversation_history, question, numbered_documents, file_type_counts, filenames):
+
+def generate_prompt_template(repo_name, github_url, conversation_history, question, numbered_documents, file_type_counts,
+                             filenames):
     """
     Generates the prompt template for asking a question.
 
@@ -30,22 +34,24 @@ def generate_prompt_template(repo_name, github_url, conversation_history, questi
         PromptTemplate: The generated prompt template.
     """
     template = """
-    Repo: {repo_name} ({github_url}) | Conv: {conversation_history} | Docs: {numbered_documents} | Q: {question} | FileCount: {file_type_counts} | FileNames: {filenames}
-    Instr:
-    1. Answer based on context/docs.
-    2. Focus on repo/code.
-    3. Consider:
-       a. Purpose/features - describe.
-       b. Functions/code - provide details/samples.
-       c. Setup/usage - give instructions.
-    4. Unsure? Say "I am not sure".
-    Answer:"
-    """
+        Repo: {repo_name} ({github_url}) | Conv: {conversation_history} | Docs: {numbered_documents} | 
+        Q: {question} | FileCount: {file_type_counts} | FileNames: {filenames}
+        Instr:
+        1. Answer based on context/docs.
+        2. Focus on repo/code.
+        3. Consider:
+           a. Purpose/features - describe.
+           b. Functions/code - provide details/samples.
+           c. Setup/usage - give instructions.
+        4. Unsure? Say "I am not sure".
+        Answer:"
+        """
 
     input_variables = ["repo_name", "github_url", "conversation_history", "question", "numbered_documents",
                        "file_type_counts", "filenames"]
     prompt = PromptTemplate(template=template, input_variables=input_variables)
     return prompt
+
 
 def clone_and_index_repository(github_url):
     """
@@ -64,6 +70,7 @@ def clone_and_index_repository(github_url):
         else:
             return None, None, None, None
 
+
 def prompt_for_question(user_input, question_context, conversation_history):
     """
     Prompt for a question, generate an answer, and update conversation_history.
@@ -81,7 +88,9 @@ def prompt_for_question(user_input, question_context, conversation_history):
     conversation_history += f"Question: {user_question}\nAnswer: {answer}\n"
     return answer
 
-def ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history):
+
+def ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain,
+                  conversation_history):
     """
     Ask questions about the repository and display the answers.
 
@@ -111,6 +120,7 @@ def ask_questions(repo_name, github_url, index, documents, file_type_counts, fil
             print(f"An error occurred: {e}")
             break
 
+
 def main():
     """
     The main entry point of the program.
@@ -130,14 +140,16 @@ def main():
 
         prompt = generate_prompt_template(repo_name, github_url, "", "", len(documents), file_type_counts, filenames)
         llm_chain = LLMChain(prompt=prompt, llm=OpenAI(api_key=load_dotenv("OPENAI_API_KEY"), temperature=0.2))
-        
+
         conversation_history = ""
-        ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain, conversation_history)
-    
+        ask_questions(repo_name, github_url, index, documents, file_type_counts, filenames, llm_chain,
+                      conversation_history)
+
     except KeyboardInterrupt:
         print("Program terminated by user.")
     except Exception as e:
         print(f"An error occurred: {e}")
+
 
 if __name__ == "__main__":
     main()
