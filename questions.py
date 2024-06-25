@@ -5,6 +5,7 @@ from file_processing import search_documents
 from llm_chain import LLMChain
 from model import Model
 
+
 class QuestionContext:
     """
     A class representing the context of a question.
